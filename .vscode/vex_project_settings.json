@@ -1,0 +1,19 @@
+{
+	"extension": {
+		"version": "0.8.2026020401",
+		"json": 2
+	},
+	"project": {
+		"name": "3U_eng",
+		"description": "",
+		"creationDate": "9/16/2026, 9:15:31 AM",
+		"platform": "V5",
+		"language": "cpp",
+		"slot": 8,
+		"sdkVersion": "V5_20240802_15_00_00",
+		"cpp": {
+			"includePath": [],
+			"printf_float": true
+		}
+	}
+}
