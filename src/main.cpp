@@ -74,36 +74,81 @@ void TurnLeft(int targetDegrees, int speed) {
 }
 
 /*---------------------------------------
-    DRIVE FORWARDS, inch, speed
+    DRIVE, inch, speed
 ---------------------------------------*/
 void Drive(int distance, int speed) {
-    int distance_traveled = 0;
-    int error = distance_traveled - distance;
-    while (error < 0 - 5 | error > 0 + 5) {
+    Inertial.setRotation(0, rotationUnits::deg);
+    right_motors.setPosition(0, rotationUnits::rev);
+    left_motors.setPosition(0, rotationUnits::rev);
+    double distance_traveled = 0;
+    double error = distance_traveled - distance;
+    timer(drive_timer);
+    while (error < 0 - 1 | error > 0 + 1) {
+        drive_timer.reset();
+        Brain.Screen.clearScreen();
         error = distance_traveled - distance;
         if (Inertial.rotation() > 0) {
-            right_motors.setVelocity(speed + Inertial.rotation(), percent);
-            left_motors.setVelocity(speed - Inertial.rotation(), percent);
+            if (distance > 0) {
+                right_motors.setVelocity(speed + Inertial.rotation(), percent);
+                left_motors.setVelocity(speed - Inertial.rotation(), percent);
+            }
+            else if (distance < 0) {
+                right_motors.setVelocity(speed - Inertial.rotation(), percent);
+                left_motors.setVelocity(speed + Inertial.rotation(), percent);
+            }
         }
         else if (Inertial.rotation() < 0) {
-            right_motors.setVelocity(speed + Inertial.rotation(), percent);
-            left_motors.setVelocity(speed - Inertial.rotation(), percent);
+            if (distance > 0) {
+                right_motors.setVelocity(speed + Inertial.rotation(), percent);
+                left_motors.setVelocity(speed - Inertial.rotation(), percent);
+            }
+            else if (distance < 0) {
+                right_motors.setVelocity(speed - Inertial.rotation(), percent);
+                left_motors.setVelocity(speed + Inertial.rotation(), percent);
+            }
         }
         else {
             right_motors.setVelocity(speed, percent);
             left_motors.setVelocity(speed, percent);
         }
-
+        distance_traveled = ((right_motors.position(rev) + left_motors.position(rev)) / 2) * (4 * M_PI);
+        if (error < 0) {
+            right_motors.spin(fwd);
+            left_motors.spin(fwd);
+        }
+        else if (error > 0) {
+            right_motors.spin(reverse);
+            left_motors.spin(reverse);
+        }
+        wait(4, msec);  
     }
+    right_motors.stop(brakeType::brake);
+    left_motors.stop(brakeType::brake);
 }
 
 void autonomous() {
-    TurnRight(90, 20);
+    Drive(12 * 5, 50);
+    wait(0.5, sec);
+    Drive(-12 * 5, 50);
+    wait(0.5, sec);
+    Drive(12 * 7, 50);
+    wait(0.5, sec);
+    Drive(-12 * 7, 50);
+    wait(0.5, sec);
+    Drive(12 * 10, 50);
+    wait(0.5, sec);
+    TurnLeft(180, 20);
+    Drive(12 * 10, 50);
+    wait(0.5, sec);
     wait(4, msec);
 }
 
 
 int main() {
+    //testing area
+    timer(testing_timer);
+    wait(20, msec);
+    Brain.Screen.print((testing_timer.time() * pow(10, -3)));
     // calibrate inertial
     Inertial.calibrate();
     while (Inertial.isCalibrating()) {
