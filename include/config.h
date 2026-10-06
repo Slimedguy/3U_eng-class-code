@@ -10,3 +10,6 @@ extern motor_group left_motors;
 extern motor_group right_motors;
 
 extern inertial Inertial;
+
+extern distance Distance_sensor;
+extern optical Optical_sensor;

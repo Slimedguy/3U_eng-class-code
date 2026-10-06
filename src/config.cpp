@@ -13,3 +13,6 @@ motor right_motor_back = motor(PORT16, ratio18_1, false);
 motor_group right_motors = motor_group(right_motor_front, right_motor_back);
 
 inertial Inertial = inertial(PORT20);
+
+distance Distance_sensor = distance(PORT12);
+optical Optical_sensor = optical(PORT11);

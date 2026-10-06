@@ -126,37 +126,133 @@ void Drive(int distance, int speed) {
     left_motors.stop(brakeType::brake);
 }
 
+/*----------------------------------------------------------------------
+  distance sensor, input: distance inches
+----------------------------------------------------------------------*/
+void Autodistance(int input, int speed) {
+  int internalDistance = Distance_sensor.objectDistance(inches);
+  double error = 0.2 * (fabs(input) - internalDistance);
+
+  while (input - 0.2 > internalDistance || input + 0.2 < internalDistance) {
+    if (Inertial.rotation() > 0) {
+      right_motors.setVelocity(speed * error + Inertial.rotation(), percent);
+      left_motors.setVelocity(speed * error - Inertial.rotation(), percent);
+    }
+    else if (Inertial.rotation() < 0) {
+      right_motors.setVelocity(speed * error + Inertial.rotation(), percent);
+      left_motors.setVelocity(speed * error - Inertial.rotation(), percent);
+     }
+     else {
+      right_motors.setVelocity(speed * error, percent);
+      left_motors.setVelocity(speed * error, percent);
+    }
+
+    right_motors.spin(fwd);
+    left_motors.spin(fwd);
+    internalDistance = Distance_sensor.objectDistance(inches);
+    error = 0.2 * (fabs(input) - internalDistance);
+    wait(10, msec);
+  }
+}
+
+// --- Calibration Constants ---
+// You must update these numbers based on your manual Brain testing
+const double RED_HUE_TARGET = 10.0;   // Red is usually near 0 or 360
+const double YELLOW_HUE_TARGET = 55.0;   // Red is usually near 0 or 360
+const double BLUE_HUE_TARGET = 210.0;   // Red is usually near 0 or 360
+const double HUE_TOLERANCE = 20.0;    // Allows for +/- 20 degrees of color shifting
+const double MIN_PROXIMITY = 60.0;    // Object must be >60% close to be considered "seen"
+
+/**
+ * Detects if a Red object is directly in front of the sensor.
+ * Handles the "wraparound" issue of the color wheel where Red is both 0 and 360.
+ */
+bool detectRedObject() {
+    // STEP 1: Is there actually an object there?
+    // We check proximity first so we don't accidentally read the hue of the floor.
+    if (Optical_sensor.isNearObject() && Optical_sensor.objectDetectThreshold() > MIN_PROXIMITY) {
+        
+        // STEP 2: What color is it?
+        double currentHue = Optical_sensor.hue();
+        
+        // STEP 3: Math check. 
+        // Because Red sits at the top of the color wheel, a red object might 
+        // read as Hue 5, or it might read as Hue 355. We must check both sides!
+        if ((currentHue > 360 - HUE_TOLERANCE) || (currentHue < RED_HUE_TARGET + HUE_TOLERANCE)) {
+            return true; // It's Red!
+        }
+    }
+    return false; // Not Red, or no object present
+}
+
+/**
+ * Detects if a Blue object is directly in front of the sensor.
+ */
+bool detectBlueObject() {
+
+    if (Optical_sensor.isNearObject() && Optical_sensor.objectDetectThreshold() > MIN_PROXIMITY) {
+        
+        double currentHue = Optical_sensor.hue();
+
+        if ((currentHue < BLUE_HUE_TARGET + HUE_TOLERANCE) || (currentHue < BLUE_HUE_TARGET - HUE_TOLERANCE)) {
+            return true; // It's Blue!
+        }
+    }
+    return false; // Not Blue, or no object present
+}
+
+/**
+ * Detects if a Yellow object is directly in front of the sensor.
+ */
+bool detectYellowObject() {
+
+    if (Optical_sensor.isNearObject() && Optical_sensor.objectDetectThreshold() > MIN_PROXIMITY) {
+        
+        double currentHue = Optical_sensor.hue();
+
+        if ((currentHue < YELLOW_HUE_TARGET + HUE_TOLERANCE) || (currentHue < YELLOW_HUE_TARGET - HUE_TOLERANCE)) {
+            return true; // It's Blue!
+        }
+    }
+    return false; // Not Blue, or no object present
+}
+
 void autonomous() {
-    Drive(12 * 5, 50);
-    wait(0.5, sec);
-    Drive(-12 * 5, 50);
-    wait(0.5, sec);
-    Drive(12 * 7, 50);
-    wait(0.5, sec);
-    Drive(-12 * 7, 50);
-    wait(0.5, sec);
-    Drive(12 * 10, 50);
-    wait(0.5, sec);
-    TurnLeft(180, 20);
-    Drive(12 * 10, 50);
-    wait(0.5, sec);
-    wait(4, msec);
+    Drive(12, 45);
+    TurnRight(30, 30);
+    TurnLeft(60, 30);
+    TurnRight(30, 30);
+    //required movement
+    Brain.Screen.clearLine();
+    Optical_sensor.setLightPower(100);
+    if (detectRedObject) {
+        Brain.Screen.print("Red Object Detected");
+    }
+    else if (detectBlueObject) {
+        Brain.Screen.print("Blue Object Detected");
+    }
+    else if (detectYellowObject) {
+        Brain.Screen.print("Yellow Object Detected");
+    }
+    else {
+        Brain.Screen.print("Nothing Detected");
+    }
+    Optical_sensor.setLightPower(0);
+    TurnRight(100, 30);
+    Autodistance(4, 40);
+
 }
 
 
 int main() {
     //testing area
-    timer(testing_timer);
-    wait(20, msec);
-    Brain.Screen.print((testing_timer.time() * pow(10, -3)));
+    Autodistance(10, 20);
     // calibrate inertial
     Inertial.calibrate();
     while (Inertial.isCalibrating()) {
         wait(2, msec);
     }
     Master.rumble("._.");
-    // start autonomous routine
-    autonomous();
     // Declare Loop important variables
     int right_drive;
     int left_drive;
@@ -166,6 +262,8 @@ int main() {
     left_motors.setStopping(brakeType::brake);
     right_motors.setStopping(brakeType::brake);
     Brain.Screen.printAt( 10, 50, "Hello V5" );
+    // start autonomous routine
+    //autonomous();
    
     while(1) {
         // set controller deadzones
@@ -191,7 +289,9 @@ int main() {
         if (right_drive > 20) {
             right_motors.spin(fwd);
         }
-  
+        
+        Brain.Screen.clearLine();
+        Brain.Screen.print(Optical_sensor.hue());
 
         // Allow other tasks to run
         this_thread::sleep_for(10);
