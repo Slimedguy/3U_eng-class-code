@@ -131,28 +131,30 @@ void Drive(int distance, int speed) {
 ----------------------------------------------------------------------*/
 void Autodistance(int input, int speed) {
   int internalDistance = Distance_sensor.objectDistance(inches);
-  double error = 0.2 * (fabs(input) - internalDistance);
-
-  while (input - 0.2 > internalDistance || input + 0.2 < internalDistance) {
+  double error = input - internalDistance;
+  double p = 0.1;
+  while (error > 0.1 || error < -0.1) {
     if (Inertial.rotation() > 0) {
-      right_motors.setVelocity(speed * error + Inertial.rotation(), percent);
-      left_motors.setVelocity(speed * error - Inertial.rotation(), percent);
+      right_motors.setVelocity(speed * (error * p) + Inertial.rotation(), percent);
+      left_motors.setVelocity(speed * (error * p) - Inertial.rotation(), percent);
     }
     else if (Inertial.rotation() < 0) {
-      right_motors.setVelocity(speed * error + Inertial.rotation(), percent);
-      left_motors.setVelocity(speed * error - Inertial.rotation(), percent);
+      right_motors.setVelocity(speed * (error * p) + Inertial.rotation(), percent);
+      left_motors.setVelocity(speed * (error * p) - Inertial.rotation(), percent);
      }
      else {
-      right_motors.setVelocity(speed * error, percent);
-      left_motors.setVelocity(speed * error, percent);
+      right_motors.setVelocity(speed * (error * p), percent);
+      left_motors.setVelocity(speed * (error * p), percent);
     }
 
     right_motors.spin(fwd);
     left_motors.spin(fwd);
     internalDistance = Distance_sensor.objectDistance(inches);
-    error = 0.2 * (fabs(input) - internalDistance);
+    error = input - internalDistance;
     wait(10, msec);
   }
+  right_motors.stop();
+  left_motors.stop();
 }
 
 // --- Calibration Constants ---
@@ -218,10 +220,11 @@ bool detectYellowObject() {
 }
 
 void autonomous() {
-    Drive(12, 45);
-    TurnRight(30, 30);
-    TurnLeft(60, 30);
-    TurnRight(30, 30);
+    Drive(-48, 45);
+    TurnRight(30, 20);
+    TurnLeft(60, 20);
+    TurnRight(30, 20);
+    wait(100, msec);
     //required movement
     Brain.Screen.clearLine();
     Optical_sensor.setLightPower(100);
@@ -238,15 +241,19 @@ void autonomous() {
         Brain.Screen.print("Nothing Detected");
     }
     Optical_sensor.setLightPower(0);
-    TurnRight(100, 30);
-    Autodistance(4, 40);
-
+    TurnRight(40, 30);
+    Drive(-10, 45);
+    TurnRight(80, 30);
+    Drive(-70, 45);
+    Autodistance(18, 40);
+    TurnRight(1080, 30);
+    
 }
 
 
 int main() {
     //testing area
-    Autodistance(10, 20);
+
     // calibrate inertial
     Inertial.calibrate();
     while (Inertial.isCalibrating()) {
@@ -263,7 +270,7 @@ int main() {
     right_motors.setStopping(brakeType::brake);
     Brain.Screen.printAt( 10, 50, "Hello V5" );
     // start autonomous routine
-    //autonomous();
+    autonomous();
    
     while(1) {
         // set controller deadzones
