@@ -220,34 +220,38 @@ bool detectYellowObject() {
 }
 
 void autonomous() {
-    Drive(-48, 45);
+    Drive(-16.5, 45);
     TurnRight(30, 20);
     TurnLeft(60, 20);
     TurnRight(30, 20);
+    wait(50, msec);
+    TurnRight(26, 20);
+    Drive(-10, 45);
     wait(100, msec);
     //required movement
     Brain.Screen.clearLine();
+    Brain.Screen.setCursor(2, 1);
     Optical_sensor.setLightPower(100);
-    if (detectRedObject) {
+    if (detectRedObject()) {
         Brain.Screen.print("Red Object Detected");
     }
-    else if (detectBlueObject) {
+    else if (detectBlueObject()) {
         Brain.Screen.print("Blue Object Detected");
     }
-    else if (detectYellowObject) {
+    else if (detectYellowObject()) {
         Brain.Screen.print("Yellow Object Detected");
     }
     else {
         Brain.Screen.print("Nothing Detected");
     }
+    Brain.Screen.setCursor(1, 1);
     Optical_sensor.setLightPower(0);
-    TurnRight(40, 30);
-    Drive(-10, 45);
-    TurnRight(80, 30);
-    Drive(-70, 45);
-    Autodistance(18, 40);
-    TurnRight(1080, 30);
+    wait(100, msec);
+    Drive(5, 45);
+    TurnRight(54, 20);
+    Drive(-48, 45);
     
+    wait(5, sec);
 }
 
 
@@ -268,7 +272,6 @@ int main() {
     int deadzone = 15;
     left_motors.setStopping(brakeType::brake);
     right_motors.setStopping(brakeType::brake);
-    Brain.Screen.printAt( 10, 50, "Hello V5" );
     // start autonomous routine
     autonomous();
    
@@ -297,9 +300,6 @@ int main() {
             right_motors.spin(fwd);
         }
         
-        Brain.Screen.clearLine();
-        Brain.Screen.print(Optical_sensor.hue());
-
         // Allow other tasks to run
         this_thread::sleep_for(10);
     }
