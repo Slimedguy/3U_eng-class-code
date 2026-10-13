@@ -130,22 +130,23 @@ void Drive(int distance, int speed) {
   distance sensor, input: distance inches
 ----------------------------------------------------------------------*/
 void Autodistance(int input, int speed) {
-  int internalDistance = Distance_sensor.objectDistance(inches);
-  double error = input - internalDistance;
-  double p = 0.1;
-  while (error > 0.1 || error < -0.1) {
-    if (Inertial.rotation() > 0) {
-      right_motors.setVelocity(speed * (error * p) + Inertial.rotation(), percent);
-      left_motors.setVelocity(speed * (error * p) - Inertial.rotation(), percent);
-    }
-    else if (Inertial.rotation() < 0) {
-      right_motors.setVelocity(speed * (error * p) + Inertial.rotation(), percent);
-      left_motors.setVelocity(speed * (error * p) - Inertial.rotation(), percent);
-     }
-     else {
-      right_motors.setVelocity(speed * (error * p), percent);
-      left_motors.setVelocity(speed * (error * p), percent);
-    }
+    Inertial.resetRotation();
+    int internalDistance = Distance_sensor.objectDistance(inches);
+    double error = input - internalDistance;
+    double p = 0.1;
+    while (error > 0.1 || error < -0.1) {
+        if (Inertial.rotation() > 0) {
+          right_motors.setVelocity(speed + Inertial.rotation(), percent);
+          left_motors.setVelocity(speed - Inertial.rotation(), percent);
+        }
+        else if (Inertial.rotation() < 0) {
+          right_motors.setVelocity(speed + Inertial.rotation(), percent);
+          left_motors.setVelocity(speed - Inertial.rotation(), percent);
+         }
+         else {
+          right_motors.setVelocity(speed, percent);
+          left_motors.setVelocity(speed, percent);
+        }
 
     right_motors.spin(fwd);
     left_motors.spin(fwd);
@@ -226,7 +227,7 @@ void autonomous() {
     TurnRight(30, 20);
     wait(50, msec);
     TurnRight(26, 20);
-    Drive(-10, 45);
+    Drive(-10, 43);
     wait(100, msec);
     //required movement
     Brain.Screen.clearLine();
@@ -247,10 +248,15 @@ void autonomous() {
     Brain.Screen.setCursor(1, 1);
     Optical_sensor.setLightPower(0);
     wait(100, msec);
-    Drive(5, 45);
+    Drive(5, 47);
     TurnRight(54, 20);
     Drive(-48, 45);
-    
+    TurnRight(1080, 20);
+    TurnRight(90, 20);
+    Autodistance(2, 30);
+    TurnRight(90, 20);
+    Drive(-40, 30);
+
     wait(5, sec);
 }
 
