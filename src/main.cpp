@@ -85,7 +85,6 @@ void Drive(int distance, int speed) {
     timer(drive_timer);
     while (error < 0 - 1 | error > 0 + 1) {
         drive_timer.reset();
-        Brain.Screen.clearScreen();
         error = distance_traveled - distance;
         if (Inertial.rotation() > 0) {
             if (distance > 0) {
@@ -136,20 +135,20 @@ void Autodistance(int input, int speed) {
     double p = 0.1;
     while (error > 0.1 || error < -0.1) {
         if (Inertial.rotation() > 0) {
-          right_motors.setVelocity(speed + Inertial.rotation(), percent);
-          left_motors.setVelocity(speed - Inertial.rotation(), percent);
+          right_motors.setVelocity(speed - Inertial.rotation(), percent);
+          left_motors.setVelocity(speed + Inertial.rotation(), percent);
         }
         else if (Inertial.rotation() < 0) {
-          right_motors.setVelocity(speed + Inertial.rotation(), percent);
-          left_motors.setVelocity(speed - Inertial.rotation(), percent);
+          right_motors.setVelocity(speed - Inertial.rotation(), percent);
+          left_motors.setVelocity(speed + Inertial.rotation(), percent);
          }
          else {
           right_motors.setVelocity(speed, percent);
           left_motors.setVelocity(speed, percent);
         }
 
-    right_motors.spin(fwd);
-    left_motors.spin(fwd);
+    right_motors.spin(reverse);
+    left_motors.spin(reverse);
     internalDistance = Distance_sensor.objectDistance(inches);
     error = input - internalDistance;
     wait(10, msec);
@@ -160,9 +159,9 @@ void Autodistance(int input, int speed) {
 
 // --- Calibration Constants ---
 // You must update these numbers based on your manual Brain testing
-const double RED_HUE_TARGET = 10.0;   // Red is usually near 0 or 360
-const double YELLOW_HUE_TARGET = 55.0;   // Red is usually near 0 or 360
-const double BLUE_HUE_TARGET = 210.0;   // Red is usually near 0 or 360
+const double RED_HUE_TARGET = 18.0;   // Red is usually near 0 or 360
+const double YELLOW_HUE_TARGET = 65.0;   // Red is usually near 0 or 360
+const double BLUE_HUE_TARGET = 160.0;   // Red is usually near 0 or 360
 const double HUE_TOLERANCE = 20.0;    // Allows for +/- 20 degrees of color shifting
 const double MIN_PROXIMITY = 60.0;    // Object must be >60% close to be considered "seen"
 
@@ -173,7 +172,7 @@ const double MIN_PROXIMITY = 60.0;    // Object must be >60% close to be conside
 bool detectRedObject() {
     // STEP 1: Is there actually an object there?
     // We check proximity first so we don't accidentally read the hue of the floor.
-    if (Optical_sensor.isNearObject() && Optical_sensor.objectDetectThreshold() > MIN_PROXIMITY) {
+    if (Optical_sensor.isNearObject()) {
         
         // STEP 2: What color is it?
         double currentHue = Optical_sensor.hue();
@@ -193,11 +192,11 @@ bool detectRedObject() {
  */
 bool detectBlueObject() {
 
-    if (Optical_sensor.isNearObject() && Optical_sensor.objectDetectThreshold() > MIN_PROXIMITY) {
+    if (Optical_sensor.isNearObject()) {
         
         double currentHue = Optical_sensor.hue();
 
-        if ((currentHue < BLUE_HUE_TARGET + HUE_TOLERANCE) || (currentHue < BLUE_HUE_TARGET - HUE_TOLERANCE)) {
+        if ((currentHue < BLUE_HUE_TARGET + HUE_TOLERANCE) && (currentHue > BLUE_HUE_TARGET - HUE_TOLERANCE)) {
             return true; // It's Blue!
         }
     }
@@ -209,15 +208,15 @@ bool detectBlueObject() {
  */
 bool detectYellowObject() {
 
-    if (Optical_sensor.isNearObject() && Optical_sensor.objectDetectThreshold() > MIN_PROXIMITY) {
+    if (Optical_sensor.isNearObject()) {
         
         double currentHue = Optical_sensor.hue();
 
-        if ((currentHue < YELLOW_HUE_TARGET + HUE_TOLERANCE) || (currentHue < YELLOW_HUE_TARGET - HUE_TOLERANCE)) {
-            return true; // It's Blue!
+        if ((currentHue < YELLOW_HUE_TARGET + HUE_TOLERANCE) && (currentHue > YELLOW_HUE_TARGET - HUE_TOLERANCE)) {
+            return true; // It's Yellow!
         }
     }
-    return false; // Not Blue, or no object present
+    return false; // Not Yellow, or no object present
 }
 
 void autonomous() {
@@ -225,37 +224,57 @@ void autonomous() {
     TurnRight(30, 20);
     TurnLeft(60, 20);
     TurnRight(30, 20);
-    wait(50, msec);
-    TurnRight(26, 20);
-    Drive(-10, 43);
+    wait(50, msec); 
+    TurnRight(25, 20);
+    Drive(-11, 43);
     wait(100, msec);
     //required movement
     Brain.Screen.clearLine();
     Brain.Screen.setCursor(2, 1);
     Optical_sensor.setLightPower(100);
-    if (detectRedObject()) {
+    Optical_sensor.setLightPower(100);
+    Optical_sensor.setLightPower(100);
+    Optical_sensor.setLightPower(100);
+    Optical_sensor.setLightPower(100);
+    Optical_sensor.setLightPower(100);
+    wait(200, msec); 
+    if (detectRedObject() == true) {
         Brain.Screen.print("Red Object Detected");
+        Brain.Screen.newLine();
+        Brain.Screen.print(Optical_sensor.hue());
     }
-    else if (detectBlueObject()) {
+    else if (detectBlueObject() == true) {
         Brain.Screen.print("Blue Object Detected");
+        Brain.Screen.newLine();
+        Brain.Screen.print(Optical_sensor.hue());
     }
-    else if (detectYellowObject()) {
+    else if (detectYellowObject() == true) {
         Brain.Screen.print("Yellow Object Detected");
+        Brain.Screen.newLine();
+        Brain.Screen.print(Optical_sensor.hue());
     }
     else {
         Brain.Screen.print("Nothing Detected");
     }
     Brain.Screen.setCursor(1, 1);
     Optical_sensor.setLightPower(0);
-    wait(100, msec);
-    Drive(5, 47);
-    TurnRight(54, 20);
+    wait(2000, msec);
+    Drive(6, 47);
+    wait(50, msec);
+    TurnRight(55, 20);
+    wait(50, msec);
     Drive(-48, 45);
-    TurnRight(1080, 20);
+    wait(50, msec);
+    TurnRight(1084, 20);
+    wait(50, msec);
     TurnRight(90, 20);
-    Autodistance(2, 30);
-    TurnRight(90, 20);
-    Drive(-40, 30);
+    wait(50, msec);
+    Autodistance(6, 30);
+    wait(50, msec);
+    TurnRight(93, 20);
+    wait(50, msec);
+    Drive(-60, 30);
+    wait(50, msec);
 
     wait(5, sec);
 }
@@ -305,7 +324,9 @@ int main() {
         if (right_drive > 20) {
             right_motors.spin(fwd);
         }
-        
+        //Optical_sensor.setLightPower(100);
+        //Brain.Screen.clearLine();
+        //Brain.Screen.print(Optical_sensor.hue());
         // Allow other tasks to run
         this_thread::sleep_for(10);
     }
