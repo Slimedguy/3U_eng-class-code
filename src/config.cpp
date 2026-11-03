@@ -12,7 +12,12 @@ motor right_motor_front = motor(PORT17, ratio18_1, false);
 motor right_motor_back = motor(PORT16, ratio18_1, false);
 motor_group right_motors = motor_group(right_motor_front, right_motor_back);
 
-inertial Inertial = inertial(PORT20);
+motor doinker = motor(PORT19, ratio6_1, true);
+motor claw = motor(PORT4, ratio18_1);
+motor arm = motor(PORT14, ratio18_1);
+motor intake = motor(PORT15, ratio18_1);
+
+inertial Inertial = inertial(PORT10);
 
 distance Distance_sensor = distance(PORT12);
 optical Optical_sensor = optical(PORT11);

@@ -160,9 +160,9 @@ void Autodistance(int input, int speed) {
 // --- Calibration Constants ---
 // You must update these numbers based on your manual Brain testing
 const double RED_HUE_TARGET = 18.0;   // Red is usually near 0 or 360
-const double YELLOW_HUE_TARGET = 65.0;   // Red is usually near 0 or 360
-const double BLUE_HUE_TARGET = 160.0;   // Red is usually near 0 or 360
-const double HUE_TOLERANCE = 20.0;    // Allows for +/- 20 degrees of color shifting
+const double YELLOW_HUE_TARGET = 51;   // Red is usually near 0 or 360
+const double BLUE_HUE_TARGET = 190.0;   // Red is usually near 0 or 360
+const double HUE_TOLERANCE = 10.0;    // Allows for +/- 20 degrees of color shifting
 const double MIN_PROXIMITY = 60.0;    // Object must be >60% close to be considered "seen"
 
 /**
@@ -246,15 +246,17 @@ void autonomous() {
     else if (detectBlueObject() == true) {
         Brain.Screen.print("Blue Object Detected");
         Brain.Screen.newLine();
-        Brain.Screen.print(Optical_sensor.hue());
     }
     else if (detectYellowObject() == true) {
         Brain.Screen.print("Yellow Object Detected");
         Brain.Screen.newLine();
         Brain.Screen.print(Optical_sensor.hue());
+        Brain.Screen.print(Optical_sensor.hue());
     }
     else {
         Brain.Screen.print("Nothing Detected");
+        Brain.Screen.newLine();
+        Brain.Screen.print(Optical_sensor.hue());
     }
     Brain.Screen.setCursor(1, 1);
     Optical_sensor.setLightPower(0);
@@ -279,10 +281,23 @@ void autonomous() {
     wait(5, sec);
 }
 
+void comp_autonomous() {
+    intake.setVelocity(-100, percent);
+    intake.spin(fwd);
+    Drive(-30, 70);
+    Drive(-16, 20);
+    intake.spin(fwd);
+    TurnLeft(180, 30);
+    Drive(-22, 70);
+    TurnLeft(90, 30);
+    intake.spin(fwd);
+    Drive(-12, 70);
+    Drive(-18, 20);
+}
 
 int main() {
     //testing area
-
+    doinker.setPosition(0, deg);
     // calibrate inertial
     Inertial.calibrate();
     while (Inertial.isCalibrating()) {
@@ -290,40 +305,102 @@ int main() {
     }
     Master.rumble("._.");
     // Declare Loop important variables
-    int right_drive;
-    int left_drive;
-    int axis3;
-    int axis1;
+    float pCurve = 0.5;        //? curve for fwd/back
+    float tCoefficient = 1.1;  //? curve for turn
+    float tCurve = 0.66;       //? coefficient for turn
+    double power;
+    double powerC;
+    double turn;
+    double turnC;
+    bool halfSpeed = false;
+    double leftDrv;
+    double rightDrv;
     int deadzone = 15;
+    doinker.setVelocity(100, percent);
+    doinker.setStopping(brakeType::hold);
+    arm.setStopping(brakeType::hold);
+    claw.setStopping(brakeType::hold);
     left_motors.setStopping(brakeType::brake);
     right_motors.setStopping(brakeType::brake);
     // start autonomous routine
-    autonomous();
+    comp_autonomous();
    
     while(1) {
-        // set controller deadzones
-        axis3 = Master.Axis3.position();
-        axis1 = Master.Axis1.position();
+        if (Master.Axis3.position() > 5 || Master.Axis3.position() < -5) {
+            power = Master.Axis3.position();
+        }
+        else {
+            power = 0;
+        }
+        if (Master.Axis1.position() > 5 || Master.Axis1.position() < -5) {
+            turn = Master.Axis1.position();
+        }
+        else {
+            turn = 0;
+        }
 
-        if (abs(axis3) < deadzone) {
-            axis3 = 0;
+        // Calculating velocity
+        powerC = ((1 - pCurve) * power) + ((pCurve * pow(power, 3)) / 16129); // don't change 16129
+        //https://www.desmos.com/calculator/asjs86sdpy
+
+        // Calculating turn curve
+        turnC = tCoefficient * ((1 - tCurve) * turn) + ((tCurve * pow(turn, 3)) / 16129); // don't change 16129
+
+        leftDrv = -powerC + turnC;
+        rightDrv = -powerC - turnC;
+        left_motors.setVelocity(leftDrv, percent);
+        right_motors.setVelocity(rightDrv, percent);
+        left_motors.spin(fwd);
+        right_motors.spin(fwd);
+        
+        doinker.spin(fwd); // doinkercontrols
+        if (Master.ButtonL1.pressing()) {
+            doinker.spinToPosition(0, deg);
         }
-        if (abs(axis1) < deadzone) {
-            axis1 = 0;
+        else if (Master.ButtonR1.pressing()) {
+            doinker.spinToPosition(100, deg);
         }
-        // Calculate drivetrain half velocity,
-        left_drive = axis3 - axis1;
-        right_drive = axis3 + axis1;
-        // set drivetrain half velocity
-        left_motors.setVelocity(-left_drive, percent);
-        right_motors.setVelocity(-right_drive, percent);
-        // Spin the motors
-        if (left_drive > 20) {
-            left_motors.spin(fwd);
+        else {
+            doinker.stop();
         }
-        if (right_drive > 20) {
-            right_motors.spin(fwd);
+
+        if (Master.ButtonLeft.pressing()) {
+            arm.setVelocity(70, percentUnits());
+            arm.setPosition(0, deg);
+            arm.spin(fwd);
         }
+        else if (Master.ButtonRight.pressing()) {
+            arm.setVelocity(-70, percentUnits());
+            arm.setPosition(0, deg);
+            arm.spin(fwd);
+        }
+        else {
+            arm.spinToPosition(0, deg);
+        }
+
+        claw.spin(fwd);
+        if (Master.ButtonA.pressing()) {
+            claw.setVelocity(70, percentUnits());
+        }
+        else if (Master.ButtonB.pressing()) {
+            claw.setVelocity(-70, percentUnits());
+        }
+        else {
+            claw.stop();
+        }
+
+        intake.spin(fwd);
+        if (Master.ButtonL2.pressing()) {
+            intake.setVelocity(100, percentUnits());
+        }
+        else if (Master.ButtonR2.pressing()) {
+            intake.setVelocity(-100, percentUnits());
+        }
+        else {
+            intake.stop();
+        }
+
+
         //Optical_sensor.setLightPower(100);
         //Brain.Screen.clearLine();
         //Brain.Screen.print(Optical_sensor.hue());
