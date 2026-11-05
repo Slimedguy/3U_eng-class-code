@@ -14,7 +14,7 @@ motor_group right_motors = motor_group(right_motor_front, right_motor_back);
 
 motor doinker = motor(PORT19, ratio6_1, true);
 motor claw = motor(PORT4, ratio18_1);
-motor arm = motor(PORT14, ratio18_1);
+motor arm = motor(PORT14, ratio36_1);
 motor intake = motor(PORT15, ratio18_1);
 
 inertial Inertial = inertial(PORT10);

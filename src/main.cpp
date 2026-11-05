@@ -284,15 +284,26 @@ void autonomous() {
 void comp_autonomous() {
     intake.setVelocity(-100, percent);
     intake.spin(fwd);
-    Drive(-30, 70);
-    Drive(-16, 20);
+    Drive(-32, 72);
+    Drive(-22, 22);
+    intake.setVelocity(-100, percent);
     intake.spin(fwd);
-    TurnLeft(180, 30);
-    Drive(-22, 70);
-    TurnLeft(90, 30);
+    TurnLeft(180, 32);
+    Drive(-21, 72);
+    TurnLeft(90, 32);
+    intake.setVelocity(-100, percent);
     intake.spin(fwd);
-    Drive(-12, 70);
-    Drive(-18, 20);
+    Drive(-8, 22);
+    Drive(-24, 22);
+    Drive(-24, 72);
+    TurnRight(135, 32);
+    intake.setVelocity(-100, percent);
+    intake.spin(fwd);
+    Drive(-8, 72);
+    Drive(-52, 22);
+    TurnRight(45, 32);
+    intake.stop();
+    Drive(-20, 72);
 }
 
 int main() {
@@ -322,6 +333,8 @@ int main() {
     claw.setStopping(brakeType::hold);
     left_motors.setStopping(brakeType::brake);
     right_motors.setStopping(brakeType::brake);
+
+    while (!Master.ButtonA.PRESSED) {wait(10, msec);}
     // start autonomous routine
     comp_autonomous();
    
@@ -365,12 +378,12 @@ int main() {
         }
 
         if (Master.ButtonLeft.pressing()) {
-            arm.setVelocity(70, percentUnits());
+            arm.setVelocity(10, percentUnits());
             arm.setPosition(0, deg);
             arm.spin(fwd);
         }
         else if (Master.ButtonRight.pressing()) {
-            arm.setVelocity(-70, percentUnits());
+            arm.setVelocity(-10, percentUnits());
             arm.setPosition(0, deg);
             arm.spin(fwd);
         }
